@@ -46,5 +46,12 @@ server.listen((err) => {
     throw err;
   }
 
-  console.log('listening on port ' + server.address().port);
+  const port = server.address().port;
+  localTunnel(port, { subdomain: argv.subdomain, host: argv.tunnelHost }, (err, tunnel) => {
+    if (err) {
+      throw err;
+    }
+
+    console.log(`forwarding ${tunnel.url.replace(/^https?:\/\//, '*.')} to sockets ${dir}/*`);
+  });
 });
