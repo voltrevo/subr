@@ -18,14 +18,19 @@ const app = (req, res) => {
       path: '/' + req.url.substring('/foobar/'.length),
       headers: req.headers
     }, (sockRes) => {
-      console.log('Got response from unix socket');
       sockRes.pipe(res);
     });
 
     req.pipe(sockReq);
+
+    sockReq.addListener('error', (err) => {
+      console.error(err);
+      res.writeHead(404, {'Content-Type': 'text/plain'});
+      res.end('Couldn\'t find socket to route for ' + req.url);
+    });
   } else {
     res.writeHead(404, {'Content-Type': 'text/plain'});
-    res.end('Couldn\'t find socket to route for', req.url);
+    res.end('Couldn\'t find socket to route for' + req.url);
   }
 };
 
