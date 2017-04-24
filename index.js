@@ -15,7 +15,7 @@ const app = (req, res) => {
     const sockReq = http.request({
       socketPath: `${dir}/foobar`,
       method: req.method,
-      path: '/' + req.url.substring('/foobar'.length),
+      path: '/' + req.url.substring('/foobar/'.length),
       headers: req.headers
     }, (sockRes) => {
       console.log('Got response from unix socket');
