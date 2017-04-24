@@ -11,20 +11,20 @@ const dir = argv.dir || '.';
 const app = (req, res) => {
   const urlParts = req.url.split('/');
 
-  const sockName = urlParts[1];
+  const domainLevels = req.headers.host.split('.');
 
-  if (!sockName) {
-    res.writeHead(404, {'Content-Type': 'text/plain'});
-    res.end('Couldn\'t find socket to route for ' + req.url);
+  if (domainLevels.length !== 4) {
+    res.writeHead(500, {'Content-Type': 'text/plain'});
+    res.end('Expected domain to have four levels <socket>.<tunnel-namespace>.<tunnel-name>.<tunnel-tld>: ' + req.headers.host);
     return;
   }
 
-  const tailUrl = '/' + urlParts.slice(2).join('/');
+  const sockName = domainLevels[0];
 
   const sockReq = http.request({
     socketPath: `${dir}/${sockName}`,
     method: req.method,
-    path: tailUrl,
+    path: req.url,
     headers: req.headers
   }, (sockRes) => {
     sockRes.pipe(res);
