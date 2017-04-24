@@ -7,7 +7,7 @@ const httpolyglot = require('httpolyglot');
 const argv = require('yargs').argv;
 
 const certDir = argv['cert-dir'];
-const dir = argv._[0] || '.';
+const dir = argv.dir || '.';
 const port = argv.port || 8080;
 
 const app = (req, res) => {
@@ -17,7 +17,7 @@ const app = (req, res) => {
 
   if (!sockName) {
     res.writeHead(404, {'Content-Type': 'text/plain'});
-    res.end('Couldn\'t find socket to route for' + req.url);
+    res.end('Couldn\'t find socket to route for ' + req.url);
     return;
   }
 
