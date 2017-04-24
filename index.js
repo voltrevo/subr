@@ -11,27 +11,34 @@ const dir = argv._[0] || '.';
 const port = argv.port || 8080;
 
 const app = (req, res) => {
-  if (req.url.indexOf('/foobar') === 0) {
-    const sockReq = http.request({
-      socketPath: `${dir}/foobar`,
-      method: req.method,
-      path: '/' + req.url.substring('/foobar/'.length),
-      headers: req.headers
-    }, (sockRes) => {
-      sockRes.pipe(res);
-    });
+  const urlParts = req.url.split('/');
 
-    req.pipe(sockReq);
+  const sockName = urlParts[1];
 
-    sockReq.addListener('error', (err) => {
-      console.error(err);
-      res.writeHead(404, {'Content-Type': 'text/plain'});
-      res.end('Couldn\'t find socket to route for ' + req.url);
-    });
-  } else {
+  if (!sockName) {
     res.writeHead(404, {'Content-Type': 'text/plain'});
     res.end('Couldn\'t find socket to route for' + req.url);
+    return;
   }
+
+  const tailUrl = '/' + urlParts.slice(2).join('/');
+
+  const sockReq = http.request({
+    socketPath: `${dir}/${sockName}`,
+    method: req.method,
+    path: tailUrl,
+    headers: req.headers
+  }, (sockRes) => {
+    sockRes.pipe(res);
+  });
+
+  req.pipe(sockReq);
+
+  sockReq.addListener('error', (err) => {
+    console.error(err);
+    res.writeHead(404, {'Content-Type': 'text/plain'});
+    res.end('Couldn\'t find socket to route for ' + req.url);
+  });
 };
 
 const server = (() => {
