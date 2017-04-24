@@ -6,19 +6,11 @@ const http = require('http');
 const httpolyglot = require('httpolyglot');
 const argv = require('yargs').argv;
 
-const certDir = (
-  process.env.CERT_DIR ||
-  argv['cert-dir'] ||
-  (() => { throw new Error('Need certificates from CERT_DIR or --cert-dir'); })
-);
-
+const certDir = argv['cert-dir'];
 const dir = argv._[0] || '.';
 const port = argv.port || 8080;
 
-const server = httpolyglot.createServer({
-  key: fs.readFileSync(`${certDir}/localhost.key`),
-  cert: fs.readFileSync(`${certDir}/localhost.crt`),
-}, (req, res) => {
+const app = (req, res) => {
   if (req.url.indexOf('/foobar') === 0) {
     const sockReq = http.request({
       socketPath: `${dir}/foobar`,
@@ -35,6 +27,18 @@ const server = httpolyglot.createServer({
     res.writeHead(404, {'Content-Type': 'text/plain'});
     res.end('Couldn\'t find socket to route for', req.url);
   }
-});
+};
+
+const server = (() => {
+  if (!certDir) {
+    console.log('--cert-dir not provided, using http only');
+    return http.createServer(app);
+  }
+
+  return httpolyglot.createServer({
+    key: fs.readFileSync(`${certDir}/localhost.key`),
+    cert: fs.readFileSync(`${certDir}/localhost.crt`),
+  }, app);
+})();
 
 server.listen(port);
