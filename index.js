@@ -6,7 +6,6 @@ const http = require('http');
 const localTunnel = require('localtunnel');
 const argv = require('yargs').argv;
 
-const certDir = argv['cert-dir'];
 const dir = argv.dir || '.';
 
 const app = (req, res) => {
@@ -40,14 +39,7 @@ const app = (req, res) => {
   });
 };
 
-const server = (() => {
-  if (!certDir) {
-    console.log('--cert-dir not provided, using http only');
-    return http.createServer(app);
-  }
-
-  return http.createServer(app);
-})();
+const server = http.createServer(app);
 
 server.listen((err) => {
   if (err) {
