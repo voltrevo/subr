@@ -3,12 +3,11 @@
 const fs = require('fs');
 const http = require('http');
 
-const httpolyglot = require('httpolyglot');
+const localTunnel = require('localtunnel');
 const argv = require('yargs').argv;
 
 const certDir = argv['cert-dir'];
 const dir = argv.dir || '.';
-const port = argv.port || 8080;
 
 const app = (req, res) => {
   const urlParts = req.url.split('/');
@@ -47,10 +46,13 @@ const server = (() => {
     return http.createServer(app);
   }
 
-  return httpolyglot.createServer({
-    key: fs.readFileSync(`${certDir}/localhost.key`),
-    cert: fs.readFileSync(`${certDir}/localhost.crt`),
-  }, app);
+  return http.createServer(app);
 })();
 
-server.listen(port);
+server.listen((err) => {
+  if (err) {
+    throw err;
+  }
+
+  console.log('listening on port ' + server.address().port);
+});
