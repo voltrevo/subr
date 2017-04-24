@@ -27,6 +27,11 @@ const app = (req, res) => {
     path: req.url,
     headers: req.headers
   }, (sockRes) => {
+    res.statusCode = sockRes.statusCode;
+    res.statusMessage = sockRes.statusMessage;
+    for (const headerKey of Object.keys(sockRes.headers)) {
+      res.setHeader(headerKey, sockRes.headers[headerKey]);
+    }
     sockRes.pipe(res);
   });
 
