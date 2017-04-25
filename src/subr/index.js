@@ -3,6 +3,7 @@
 const once = require('lodash/once');
 
 module.exports = ({
+  console,
   fs,
   http,
   https,
