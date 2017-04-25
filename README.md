@@ -77,3 +77,15 @@ $ jobs
 $ kill %1 %2
 $ rmdir sockets
 ```
+
+## Static Content
+If a directory is encountered instead of a socket, it will be served statically:
+
+```sh
+mkdir -p sockets
+subr sockets -p 8080 &
+mkdir sockets/static
+echo 'Hello world!' >sockets/static/index.html
+curl static.localtest.me:8080
+# output: Hello world!
+```
