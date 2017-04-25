@@ -1,16 +1,13 @@
 'use strict';
 
-const { dir, key, cert, tunnel, port: argvPort } = require('yargs')
-  .usage('Usage: $0 [options]')
+const { _: [dir = '.'], key, cert, tunnel, port: argvPort } = require('yargs')
+  .usage('Usage: $0 [dir] [options]')
   .example('$0', 'Connects http://*.localtest.me:<random> to ./*')
   .example('$0 -p 80,443 -k <key> -c <cert>', 'Connects http(s)://*.localtest.me to ./*')
   .example('$0 -p 1234 -k <key> -c <cert>', 'Connects http(s)://*.localtest.me:1234 to ./*')
   .example('$0 -t bob.tunnelprovider.com', 'Connects http(s)://*.bob.tunnelprovider.com to ./*')
   .alias('p', 'port')
   .describe('p', 'Port(s) to use, comma separated')
-  .alias('d', 'dir')
-  .describe('d', 'Directory to look for unix domain sockets')
-  .default('d', '.')
   .alias('k', 'key')
   .describe('k', 'File containing ssl key')
   .alias('c', 'cert')
@@ -28,6 +25,7 @@ const http = require('http');
 const https = require('https');
 const httpolyglot = require('httpolyglot');
 const once = require('lodash/once');
+const path = require('path');
 
 const localTunnel = require('localtunnel');
 
@@ -96,7 +94,6 @@ const annotatedServers = maybePorts
         return http.createServer(app);
       }
 
-      // TODO: try using only https with tunnel
       return https.createServer(tlsConf(), app);
     })();
 
@@ -109,7 +106,7 @@ const annotatedServers = maybePorts
   })
 ;
 
-console.log(`Connecting sockets ${dir}/\* to:`);
+console.log(`Connecting sockets at ${path.join(dir, '*')} to:`);
 
 annotatedServers.forEach(({ maybePort, usingHttp, usingHttps, server }, i) => {
   server.listen(maybePort, (err) => {
