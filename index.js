@@ -66,7 +66,7 @@ const tlsConf = once(() => ({
   cert: fs.readFileSync(cert),
 }));
 
-const maybePorts = (argvPort ? String(argPort).split(',').map(Number) : [undefined]);
+const maybePorts = (argvPort ? String(argvPort).split(',').map(Number) : [undefined]);
 
 if (maybePorts.length === 1 && maybePorts[0] === 443 && tunnel) {
   console.log('tunnel requires http, adding unspecified port for http that will be chosen by os');
@@ -109,6 +109,8 @@ const annotatedServers = maybePorts
   })
 ;
 
+console.log(`Connecting sockets ${dir}/\* to:`);
+
 annotatedServers.forEach(({ maybePort, usingHttp, usingHttps, server }, i) => {
   server.listen(maybePort, (err) => {
     if (err) {
@@ -119,12 +121,12 @@ annotatedServers.forEach(({ maybePort, usingHttp, usingHttps, server }, i) => {
 
     if (usingHttp) {
       const portSuffix = (port === 80 ? '' : `:${port}`);
-      console.log(`http:/\/\*.localtest.me${portSuffix} connected to sockets ${dir}/\*`);
+      console.log(`- http:/\/\*.localtest.me${portSuffix}`);
     }
 
     if (usingHttps) {
       const portSuffix = (port === 443 ? '' : `:${port}`);
-      console.log(`https:/\/\*.localtest.me${portSuffix} connected to sockets ${dir}/\*`);
+      console.log(`- https:/\/\*.localtest.me${portSuffix}`);
     }
 
     if (i !== 0 || !tunnel) {
@@ -141,8 +143,8 @@ annotatedServers.forEach(({ maybePort, usingHttp, usingHttps, server }, i) => {
 
       const remoteWildcard = url.replace(/^https?:\/\//, '*.');
 
-      console.log(`http://${remoteWildcard} connected to sockets ${dir}/*`);
-      console.log(`https://${remoteWildcard} connected to sockets ${dir}/*`);
+      console.log(`- http://${remoteWildcard}`);
+      console.log(`- https://${remoteWildcard}`);
     });
   });
 });
