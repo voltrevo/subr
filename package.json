@@ -1,10 +1,14 @@
 {
   "name": "subr",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Subdomain Router",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository" : {
+    "type" : "git",
+    "url" : "https://github.com/voltrevo/subr.git"
   },
   "keywords": [
     "subdomain",
