@@ -12,6 +12,7 @@
     "unix",
     "socket"
   ],
+  "bin": "./index.js",
   "author": "Andrew Morris",
   "license": "MIT",
   "dependencies": {
