@@ -50,7 +50,14 @@ server.listen(argv.port, (err) => {
 
   console.log(`http:/\/\*.localtest.me${portSuffix} connected to sockets ${dir}/\*`);
 
-  localTunnel(port, { subdomain: argv.subdomain, host: argv.tunnelHost }, (err, tunnel) => {
+  if (!argv.tunnel) {
+    return;
+  }
+
+  const [subdomain, ...domainTail] = argv.tunnel.split('.');
+  const host = `http://${domainTail.join('.')}`;
+
+  localTunnel(port, { subdomain, host }, (err, tunnel) => {
     if (err) {
       throw err;
     }
