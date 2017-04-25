@@ -59,17 +59,19 @@ server.listen(path, (err) => {
 ```
 
 ```sh
+mkdir -p sockets
 node hello.js &
-subr sockets &
+subr sockets -p 8080 &
 ```
 
-Then go to http://hello.localtest.me.
+Then go to http://hello.localtest.me:8080.
 
 Don't forget to cleanup:
 
 ```
 $ jobs
 [1]-  Running                 node hello.js &
-[2]+  Running                 subr sockets &
+[2]+  Running                 subr sockets -p 8080 &
 $ kill %1 %2
+$ rmdir sockets
 ```
