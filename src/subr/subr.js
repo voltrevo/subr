@@ -1,7 +1,5 @@
 'use strict';
 
-const once = require('lodash/once');
-
 module.exports = ({
   console,
   fs,
@@ -13,10 +11,9 @@ module.exports = ({
   path,
 }) => ({
   dir,
-  key,
-  cert,
-  argvPort,
+  tlsConfig,
   tunnel,
+  ports,
 }) => {
   const file = new nodeStatic.Server(dir);
 
@@ -62,19 +59,12 @@ module.exports = ({
     });
   };
 
-  const tlsConf = once(() => ({
-    key: fs.readFileSync(key),
-    cert: fs.readFileSync(cert),
-  }));
-
-  const maybePorts = (argvPort ? String(argvPort).split(',').map(Number) : [undefined]);
-
-  if (maybePorts.length === 1 && maybePorts[0] === 443 && tunnel) {
+  if (ports.length === 1 && ports[0] === 443 && tunnel) {
     console.log('tunnel requires http, adding unspecified port for http that will be chosen by os');
-    maybePorts.unshift(undefined);
+    ports.unshift(0);
   }
 
-  const annotatedServers = maybePorts
+  const annotatedServers = ports
     .map((maybePort) => {
       let usingHttp = false;
       let usingHttps = false;
@@ -85,19 +75,19 @@ module.exports = ({
         usingHttps = true;
       } else {
         usingHttp = true;
-        usingHttps = (key && cert);
+        usingHttps = !!tlsConfig;
       }
 
       const server = (() => {
         if (usingHttp && usingHttps) {
-          return httpolyglot.createServer(tlsConf(), app);
+          return httpolyglot.createServer(tlsConfig, app);
         }
 
         if (usingHttp) {
           return http.createServer(app);
         }
 
-        return https.createServer(tlsConf(), app);
+        return https.createServer(tlsConfig, app);
       })();
 
       return {
@@ -112,7 +102,7 @@ module.exports = ({
   console.log(`Connecting sockets at ${path.join(dir, '*')} to:`);
 
   annotatedServers.forEach(({ maybePort, usingHttp, usingHttps, server }, i) => {
-    server.listen(maybePort, (err) => {
+    server.listen(maybePort || 0, (err) => {
       if (err) {
         throw err;
       }
