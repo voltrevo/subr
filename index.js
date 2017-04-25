@@ -35,34 +35,49 @@ const httpolyglot = require('httpolyglot');
 
 const localTunnel = require('localtunnel');
 const once = require('lodash/once');
+const nodeStatic = require('node-static');
+
+const file = new nodeStatic.Server(dir);
 
 const app = (req, res) => {
-  const urlParts = req.url.split('/');
-
   const domainLevels = req.headers.host.split('.');
-
   const sockName = domainLevels[0];
 
-  const sockReq = http.request({
-    socketPath: `${dir}/${sockName}`,
-    method: req.method,
-    path: req.url,
-    headers: req.headers
-  }, (sockRes) => {
-    res.statusCode = sockRes.statusCode;
-    res.statusMessage = sockRes.statusMessage;
-    for (const headerKey of Object.keys(sockRes.headers)) {
-      res.setHeader(headerKey, sockRes.headers[headerKey]);
+  fs.stat(`${dir}/${sockName}`, (err, stats) => {
+    if (err) {
+      console.error(err);
+      res.writeHead(404, {'Content-Type': 'text/plain'});
+      res.end('Not Found');
+      return;
     }
-    sockRes.pipe(res);
-  });
 
-  req.pipe(sockReq);
+    if (stats.isDirectory()) {
+      req.url = `${sockName}/${req.url}`;
+      file.serve(req, res);
+      return;
+    }
 
-  sockReq.addListener('error', (err) => {
-    console.error(err);
-    res.writeHead(404, {'Content-Type': 'text/plain'});
-    res.end(`Couldn\'t find socket: ${sockName}`);
+    const sockReq = http.request({
+      socketPath: `${dir}/${sockName}`,
+      method: req.method,
+      path: req.url,
+      headers: req.headers
+    }, (sockRes) => {
+      res.statusCode = sockRes.statusCode;
+      res.statusMessage = sockRes.statusMessage;
+      for (const headerKey of Object.keys(sockRes.headers)) {
+        res.setHeader(headerKey, sockRes.headers[headerKey]);
+      }
+      sockRes.pipe(res);
+    });
+
+    req.pipe(sockReq);
+
+    sockReq.addListener('error', (err) => {
+      console.error(err);
+      res.writeHead(404, {'Content-Type': 'text/plain'});
+      res.end(`Couldn\'t find socket: ${sockName}`);
+    });
   });
 };
 
