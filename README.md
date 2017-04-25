@@ -89,3 +89,38 @@ echo 'Hello world!' >sockets/static/index.html
 curl static.localtest.me:8080
 # output: Hello world!
 ```
+
+## API
+You can also require `subr` instead of using the cli:
+
+```sh
+npm install --save subr
+```
+
+```js
+'use strict';
+
+const fs = require('fs');
+const subr = require('subr');
+
+subr({
+  // Directory to look for sockets/static directories:
+  // Default: .
+  dir: '.',
+
+  // Config for https:
+  // Default: omit tlsConfig
+  tlsConfig: {
+    key: fs.readFileSync('path/to/server.key'),
+    cert: fs.readFileSync('path/to/server.crt'),
+  },
+
+  // Tunnel to request (default omits this):
+  // Default: omit tunnel
+  tunnel: 'bob.tunnelprovider.com',
+
+  // Ports to use, 0 meaning random port:
+  // Default: [0]
+  ports: [80, 443],
+});
+```
