@@ -13,12 +13,6 @@ const app = (req, res) => {
 
   const domainLevels = req.headers.host.split('.');
 
-  if (domainLevels.length !== 4) {
-    res.writeHead(500, {'Content-Type': 'text/plain'});
-    res.end('Expected domain to have four levels <socket>.<tunnel-namespace>.<tunnel-name>.<tunnel-tld>: ' + req.headers.host);
-    return;
-  }
-
   const sockName = domainLevels[0];
 
   const sockReq = http.request({
@@ -40,23 +34,27 @@ const app = (req, res) => {
   sockReq.addListener('error', (err) => {
     console.error(err);
     res.writeHead(404, {'Content-Type': 'text/plain'});
-    res.end('Couldn\'t find socket to route for ' + req.url);
+    res.end(`Couldn\'t find socket: ${sockName}`);
   });
 };
 
 const server = http.createServer(app);
 
-server.listen((err) => {
+server.listen(argv.port, (err) => {
   if (err) {
     throw err;
   }
 
   const port = server.address().port;
+  const portSuffix = port === 80 ? '' : `:${port}`;
+
+  console.log(`http:/\/\*.localtest.me${portSuffix} connected to sockets ${dir}/\*`);
+
   localTunnel(port, { subdomain: argv.subdomain, host: argv.tunnelHost }, (err, tunnel) => {
     if (err) {
       throw err;
     }
 
-    console.log(`forwarding ${tunnel.url.replace(/^https?:\/\//, '*.')} to sockets ${dir}/*`);
+    console.log(`${tunnel.url.replace(/^https?:\/\//, '*.')} connected to sockets ${dir}/*`);
   });
 });
