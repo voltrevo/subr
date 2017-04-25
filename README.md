@@ -1,11 +1,12 @@
 # subr
+> A subdomain router.
 
-A subdomain router.
-
+## Install
 ```sh
 npm install -g subr
 ```
 
+## Usage
 ```sh
 subr -h
 ```
@@ -28,6 +29,7 @@ Examples:
   subr -t bob.tunnelprovider.com     Connects ./* to http(s)://*.bob.tunnelprovider.com
 ```
 
+## Example
 The idea is for your http servers to listen on unix domain sockets. Nodejs allows you to do this simply by specifying a filesystem path where you would usually specify a port. The http library will create the unix domain socket for you:
 
 ```js
