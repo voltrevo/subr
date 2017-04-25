@@ -2,6 +2,11 @@
 
 'use strict';
 
+const path = require('path');
+
+const argv = process.argv;
+argv[0] = path.basename(argv[0]);
+
 const { _: [dir = '.'], key, cert, tunnel, port: argvPort } = require('yargs')
   .usage('Usage: $0 [dir] [options]')
   .example('$0', 'Connects ./* to http://*.localtest.me:<random>')
@@ -20,17 +25,16 @@ const { _: [dir = '.'], key, cert, tunnel, port: argvPort } = require('yargs')
   .help('h')
   .alias('h', 'help')
   .wrap(100)
-  .argv
+  .parse(argv)
 ;
 
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
 const httpolyglot = require('httpolyglot');
-const once = require('lodash/once');
-const path = require('path');
 
 const localTunnel = require('localtunnel');
+const once = require('lodash/once');
 
 const app = (req, res) => {
   const urlParts = req.url.split('/');
