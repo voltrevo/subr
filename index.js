@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const http = require('http');
+const httpolyglot = require('httpolyglot');
 
 const localTunnel = require('localtunnel');
 const argv = require('yargs').argv;
@@ -38,7 +39,16 @@ const app = (req, res) => {
   });
 };
 
-const server = http.createServer(app);
+const server = (() => {
+  if (argv.key && argv.cert) {
+    return httpolyglot.createServer({
+      key: fs.readFileSync(argv.key),
+      cert: fs.readFileSync(argv.cert),
+    }, app);
+  }
+
+  return http.createServer(app);
+})();
 
 server.listen(argv.port, (err) => {
   if (err) {
