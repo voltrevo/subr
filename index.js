@@ -1,5 +1,28 @@
 'use strict';
 
+const { dir, key, cert, tunnel, port: argvPort } = require('yargs')
+  .usage('Usage: $0 [options]')
+  .example('$0', 'Connects http://*.localtest.me:<random> to ./*')
+  .example('$0 -p 80,443 -k <key> -c <cert>', 'Connects http(s)://*.localtest.me to ./*')
+  .example('$0 -p 1234 -k <key> -c <cert>', 'Connects http(s)://*.localtest.me:1234 to ./*')
+  .example('$0 -t bob.tunnelprovider.com', 'Connects http(s)://*.bob.tunnelprovider.com to ./*')
+  .alias('p', 'port')
+  .describe('p', 'Port(s) to use, comma separated')
+  .alias('d', 'dir')
+  .describe('d', 'Directory to look for unix domain sockets')
+  .default('d', '.')
+  .alias('k', 'key')
+  .describe('k', 'File containing ssl key')
+  .alias('c', 'cert')
+  .describe('c', 'File containing ssl cert')
+  .alias('t', 'tunnel')
+  .describe('t', 'Tunnel to request')
+  .help('h')
+  .alias('h', 'help')
+  .wrap(100)
+  .argv
+;
+
 const fs = require('fs');
 const http = require('http');
 const https = require('https');
@@ -7,9 +30,6 @@ const httpolyglot = require('httpolyglot');
 const once = require('lodash/once');
 
 const localTunnel = require('localtunnel');
-const argv = require('yargs').argv;
-
-const dir = argv.dir || '.';
 
 const app = (req, res) => {
   const urlParts = req.url.split('/');
@@ -42,13 +62,13 @@ const app = (req, res) => {
 };
 
 const tlsConf = once(() => ({
-  key: fs.readFileSync(argv.key),
-  cert: fs.readFileSync(argv.cert),
+  key: fs.readFileSync(key),
+  cert: fs.readFileSync(cert),
 }));
 
-const maybePorts = (argv.port ? String(argv.port).split(',').map(Number) : [undefined]);
+const maybePorts = (argvPort ? String(argPort).split(',').map(Number) : [undefined]);
 
-if (maybePorts.length === 1 && maybePorts[0] === 443 && argv.tunnel) {
+if (maybePorts.length === 1 && maybePorts[0] === 443 && tunnel) {
   console.log('tunnel requires http, adding unspecified port for http that will be chosen by os');
   maybePorts.unshift(undefined);
 }
@@ -64,7 +84,7 @@ const annotatedServers = maybePorts
       usingHttps = true;
     } else {
       usingHttp = true;
-      usingHttps = (argv.key && argv.cert);
+      usingHttps = (key && cert);
     }
 
     const server = (() => {
@@ -107,19 +127,19 @@ annotatedServers.forEach(({ maybePort, usingHttp, usingHttps, server }, i) => {
       console.log(`https:/\/\*.localtest.me${portSuffix} connected to sockets ${dir}/\*`);
     }
 
-    if (i !== 0 || !argv.tunnel) {
+    if (i !== 0 || !tunnel) {
       return;
     }
 
-    const [subdomain, ...domainTail] = argv.tunnel.split('.');
+    const [subdomain, ...domainTail] = tunnel.split('.');
     const host = `http://${domainTail.join('.')}`;
 
-    localTunnel(port, { subdomain, host }, (err, tunnel) => {
+    localTunnel(port, { subdomain, host }, (err, { url }) => {
       if (err) {
         throw err;
       }
 
-      const remoteWildcard = tunnel.url.replace(/^https?:\/\//, '*.');
+      const remoteWildcard = url.replace(/^https?:\/\//, '*.');
 
       console.log(`http://${remoteWildcard} connected to sockets ${dir}/*`);
       console.log(`https://${remoteWildcard} connected to sockets ${dir}/*`);
