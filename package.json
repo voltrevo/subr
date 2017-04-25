@@ -14,7 +14,6 @@
   "author": "Andrew Morris",
   "license": "MIT",
   "dependencies": {
-    "http-proxy": "^1.16.2",
     "httpolyglot": "^0.1.2",
     "localtunnel": "^1.8.2",
     "yargs": "^7.1.0"
