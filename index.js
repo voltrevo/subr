@@ -2,7 +2,9 @@
 
 const fs = require('fs');
 const http = require('http');
+const https = require('https');
 const httpolyglot = require('httpolyglot');
+const once = require('lodash/once');
 
 const localTunnel = require('localtunnel');
 const argv = require('yargs').argv;
@@ -39,39 +41,88 @@ const app = (req, res) => {
   });
 };
 
-const server = (() => {
-  if (argv.key && argv.cert) {
-    return httpolyglot.createServer({
-      key: fs.readFileSync(argv.key),
-      cert: fs.readFileSync(argv.cert),
-    }, app);
-  }
+const tlsConf = once(() => ({
+  key: fs.readFileSync(argv.key),
+  cert: fs.readFileSync(argv.cert),
+}));
 
-  return http.createServer(app);
-})();
+const maybePorts = (argv.port ? String(argv.port).split(',').map(Number) : [undefined]);
 
-server.listen(argv.port, (err) => {
-  if (err) {
-    throw err;
-  }
+if (maybePorts.length === 1 && maybePorts[0] === 443 && argv.tunnel) {
+  console.log('tunnel requires http, adding unspecified port for http that will be chosen by os');
+  maybePorts.unshift(undefined);
+}
 
-  const port = server.address().port;
-  const portSuffix = port === 80 ? '' : `:${port}`;
+const annotatedServers = maybePorts
+  .map(maybePort => {
+    let usingHttp = false;
+    let usingHttps = false;
 
-  console.log(`http:/\/\*.localtest.me${portSuffix} connected to sockets ${dir}/\*`);
+    if (maybePort === 80) {
+      usingHttp = true;
+    } else if (maybePort === 443) {
+      usingHttps = true;
+    } else {
+      usingHttp = true;
+      usingHttps = (argv.key && argv.cert);
+    }
 
-  if (!argv.tunnel) {
-    return;
-  }
+    const server = (() => {
+      if (usingHttp && usingHttps) {
+        return httpolyglot.createServer(tlsConf(), app);
+      }
 
-  const [subdomain, ...domainTail] = argv.tunnel.split('.');
-  const host = `http://${domainTail.join('.')}`;
+      if (usingHttp) {
+        return http.createServer(app);
+      }
 
-  localTunnel(port, { subdomain, host }, (err, tunnel) => {
+      // TODO: try using only https with tunnel
+      return https.createServer(tlsConf(), app);
+    })();
+
+    return {
+      maybePort,
+      usingHttp,
+      usingHttps,
+      server,
+    };
+  })
+;
+
+annotatedServers.forEach(({ maybePort, usingHttp, usingHttps, server }, i) => {
+  server.listen(maybePort, (err) => {
     if (err) {
       throw err;
     }
 
-    console.log(`${tunnel.url.replace(/^https?:\/\//, '*.')} connected to sockets ${dir}/*`);
+    const port = server.address().port;
+
+    if (usingHttp) {
+      const portSuffix = (port === 80 ? '' : `:${port}`);
+      console.log(`http:/\/\*.localtest.me${portSuffix} connected to sockets ${dir}/\*`);
+    }
+
+    if (usingHttps) {
+      const portSuffix = (port === 443 ? '' : `:${port}`);
+      console.log(`https:/\/\*.localtest.me${portSuffix} connected to sockets ${dir}/\*`);
+    }
+
+    if (i !== 0 || !argv.tunnel) {
+      return;
+    }
+
+    const [subdomain, ...domainTail] = argv.tunnel.split('.');
+    const host = `http://${domainTail.join('.')}`;
+
+    localTunnel(port, { subdomain, host }, (err, tunnel) => {
+      if (err) {
+        throw err;
+      }
+
+      const remoteWildcard = tunnel.url.replace(/^https?:\/\//, '*.');
+
+      console.log(`http://${remoteWildcard} connected to sockets ${dir}/*`);
+      console.log(`https://${remoteWildcard} connected to sockets ${dir}/*`);
+    });
   });
 });

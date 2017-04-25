@@ -16,6 +16,7 @@
   "dependencies": {
     "httpolyglot": "^0.1.2",
     "localtunnel": "^1.8.2",
+    "lodash": "^4.17.4",
     "yargs": "^7.1.0"
   }
 }
