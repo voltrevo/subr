@@ -1,11 +1,14 @@
+#!/usr/bin/env node
+
 'use strict';
 
 const { _: [dir = '.'], key, cert, tunnel, port: argvPort } = require('yargs')
   .usage('Usage: $0 [dir] [options]')
-  .example('$0', 'Connects http://*.localtest.me:<random> to ./*')
-  .example('$0 -p 80,443 -k <key> -c <cert>', 'Connects http(s)://*.localtest.me to ./*')
-  .example('$0 -p 1234 -k <key> -c <cert>', 'Connects http(s)://*.localtest.me:1234 to ./*')
-  .example('$0 -t bob.tunnelprovider.com', 'Connects http(s)://*.bob.tunnelprovider.com to ./*')
+  .example('$0', 'Connects ./* to http://*.localtest.me:<random>')
+  .example('$0 sockets', 'Connects ./sockets/* to http://*.localtest.me:<random>')
+  .example('$0 -p 80,443 -k <key> -c <cert>', 'Connects ./* to http(s)://*.localtest.me')
+  .example('$0 -p 1234 -k <key> -c <cert>', 'Connects ./* to http(s)://*.localtest.me:1234')
+  .example('$0 -t bob.tunnelprovider.com', 'Connects ./* to http(s)://*.bob.tunnelprovider.com')
   .alias('p', 'port')
   .describe('p', 'Port(s) to use, comma separated')
   .alias('k', 'key')
