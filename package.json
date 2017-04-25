@@ -6,9 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository" : {
-    "type" : "git",
-    "url" : "https://github.com/voltrevo/subr.git"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voltrevo/subr.git"
   },
   "keywords": [
     "subdomain",
@@ -23,6 +23,7 @@
     "httpolyglot": "^0.1.2",
     "localtunnel": "^1.8.2",
     "lodash": "^4.17.4",
+    "node-static": "^0.7.9",
     "yargs": "^7.1.0"
   }
 }
