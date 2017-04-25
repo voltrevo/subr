@@ -5,9 +5,9 @@
 const path = require('path');
 
 const argv = process.argv;
-argv[0] = path.basename(argv[0]);
+argv[1] = path.basename(argv[1]);
 
-const { _: [dir = '.'], key, cert, tunnel, port: argvPort } = require('yargs')
+const { _: [, , dir = '.'], key, cert, tunnel, port: argvPort } = require('yargs')
   .usage('Usage: $0 [dir] [options]')
   .example('$0', 'Connects ./* to http://*.localtest.me:<random>')
   .example('$0 sockets', 'Connects ./sockets/* to http://*.localtest.me:<random>')
