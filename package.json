@@ -1,15 +1,16 @@
 {
-  "name": "unix-socket-router",
-  "version": "0.0.1",
-  "description": "",
+  "name": "subr",
+  "version": "0.1.0",
+  "description": "Subdomain Router",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
+    "subdomain",
+    "router",
     "unix",
-    "socket",
-    "router"
+    "socket"
   ],
   "author": "Andrew Morris",
   "license": "MIT",
