@@ -11,52 +11,70 @@ module.exports = ({
   path,
 }) => ({
   dir,
+  findSocket: findSocketParam,
   tlsConfig,
   tunnel,
-  ports,
+  ports = [0],
 }) => {
-  const file = new nodeStatic.Server(dir);
+  const findSocket = (() => {
+    if (findSocketParam) {
+      return findSocketParam;
+    }
+
+    return (sockName) => Promise.resolve(`${dir}/${sockName}`);
+  })();
+
+  const fileServers = {};
+
+  const FileServer = (dirPath) => {
+    if (!fileServers[dirPath]) {
+      fileServers[dirPath] = new nodeStatic.Server(dirPath);
+    }
+
+    return fileServers[dirPath];
+  };
 
   const app = (req, res) => {
     const domainLevels = req.headers.host.split('.');
     const sockName = domainLevels[0];
 
-    fs.stat(`${dir}/${sockName}`, (err, stats) => {
-      if (err) {
+    findSocket(sockName)
+      .then(sockPath => fs.stat(sockPath)
+        .then(stats => {
+          if (stats.isDirectory()) {
+            FileServer(sockPath).serve(req, res);
+            return;
+          }
+
+          const sockReq = http.request({
+            socketPath: sockPath,
+            method: req.method,
+            path: req.url,
+            headers: req.headers,
+          }, (sockRes) => {
+            res.statusCode = sockRes.statusCode;
+            res.statusMessage = sockRes.statusMessage;
+            for (const headerKey of Object.keys(sockRes.headers)) {
+              res.setHeader(headerKey, sockRes.headers[headerKey]);
+            }
+            sockRes.pipe(res);
+          });
+
+          req.pipe(sockReq);
+
+          sockReq.addListener('error', (sockErr) => {
+            console.error(sockErr);
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end(`Couldn't find socket: ${sockName}`);
+          });
+        })
+      )
+      .catch(err => {
         console.error(err);
         res.writeHead(404, { 'Content-Type': 'text/plain' });
         res.end('Not Found');
-        return;
-      }
-
-      if (stats.isDirectory()) {
-        req.url = `${sockName}/${req.url}`;
-        file.serve(req, res);
-        return;
-      }
-
-      const sockReq = http.request({
-        socketPath: `${dir}/${sockName}`,
-        method: req.method,
-        path: req.url,
-        headers: req.headers,
-      }, (sockRes) => {
-        res.statusCode = sockRes.statusCode;
-        res.statusMessage = sockRes.statusMessage;
-        for (const headerKey of Object.keys(sockRes.headers)) {
-          res.setHeader(headerKey, sockRes.headers[headerKey]);
-        }
-        sockRes.pipe(res);
-      });
-
-      req.pipe(sockReq);
-
-      sockReq.addListener('error', (sockErr) => {
-        console.error(sockErr);
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end(`Couldn't find socket: ${sockName}`);
-      });
-    });
+      })
+    ;
   };
 
   if (ports.length === 1 && ports[0] === 443 && tunnel) {
@@ -99,7 +117,11 @@ module.exports = ({
     })
   ;
 
-  console.log(`Connecting sockets at ${path.join(dir, '*')} to:`);
+  if (dir) {
+    console.log(`Connecting sockets at ${path.join(dir, '*')} to:`);
+  } else {
+    console.log(`Connecting sockets at findSocket(*) to:`);
+  }
 
   annotatedServers.forEach(({ maybePort, usingHttp, usingHttps, server }, i) => {
     server.listen(maybePort || 0, (err) => {
